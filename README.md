@@ -209,23 +209,23 @@ The project covers a full-stack web application: a public calculator interface, 
 
 ## Team Analysis & Roles
 
-### Anas (Backend & Frontend)
+### 1. Anas (Backend & Frontend)
 
 Anas has a decent backend experience, primarily in Python, and is eager to work with Java as well. On the frontend side, he has experience with Next.js (React & TypeScript) and Tailwind CSS, and works best when the UI design is already sketched out. His role will focus on backend calculation logic and API integration (Epics 1, 2, and 7), with contributions to frontend implementation once designs are provided.
 
-### Greg (Backend Logic & Datasheet Research)
+### 2. Greg (Backend Logic & Datasheet Research)
 
 Greg brings experience with Spring Boot and Java, and has a background working with datasheets, making him well-suited for extracting and organizing Xantrex controller specifications. His role will center on the controller sizing and validation logic (Epics 4 and 5), as well as researching and populating the controller database with accurate datasheet data.
 
-### Anton (Frontend & UI Development)
+### 3. Anton (Frontend & UI Development)
 
 Anton is comfortable with frontend technologies including JavaScript, HTML, CSS, and Tailwind CSS. He is also interested in gaining backend experience. His role will focus on building the public-facing calculator UI and the admin dashboard interface (Epics 3 and 6 frontend), with opportunities to contribute to backend endpoints as a learning experience.
 
-### Erfan (Design & UI/Frontend)
+### 4. Erfan (Design & UI/Frontend)
 
 Erfan is open to all areas and has an interest in design and UI work. His role will involve creating the UI/UX designs and mockups that guide frontend development, and contributing to frontend implementation. He will work closely with Anton on the user-facing calculator and admin interfaces, and assist with Epic 7's frontend display of weather and correction factor data.
 
-### Huda (Project Management, Testing & Documentation)
+### 5. Huda (Project Management, Testing & Documentation)
 
 Huda's role will focus on the frontend and project management, coordinating deliverables and timelines, writing documentation, and developing the testing strategy. She will also contribute to QA and validation testing across all epics, ensuring the calculations and controller recommendations are accurate and meet acceptance criteria.
 
