@@ -2,8 +2,10 @@ package com.group18.xantrex_calculator.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -13,10 +15,65 @@ import org.springframework.web.client.RestTemplate;
 public class WeatherService {
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private double[] getCoordinates(String city, String country) {
+    private static final Set<String> US_CA_COUNTRY_TOKENS = Set.of(
+            "US", "USA", "U.S.", "U.S.A.", "UNITED STATES", "UNITED STATES OF AMERICA", "AMERICA",
+            "CA", "CAN", "CANADA");
+
+    private static final Map<String, String> REGION_ABBREVIATIONS = Map.ofEntries(
+            Map.entry("AB", "Alberta"), Map.entry("BC", "British Columbia"), Map.entry("MB", "Manitoba"),
+            Map.entry("NB", "New Brunswick"), Map.entry("NL", "Newfoundland and Labrador"),
+            Map.entry("NS", "Nova Scotia"), Map.entry("NT", "Northwest Territories"), Map.entry("NU", "Nunavut"),
+            Map.entry("ON", "Ontario"), Map.entry("PE", "Prince Edward Island"), Map.entry("QC", "Quebec"),
+            Map.entry("SK", "Saskatchewan"), Map.entry("YT", "Yukon"),
+            Map.entry("AL", "Alabama"), Map.entry("AK", "Alaska"), Map.entry("AZ", "Arizona"),
+            Map.entry("AR", "Arkansas"), Map.entry("CA", "California"), Map.entry("CO", "Colorado"),
+            Map.entry("CT", "Connecticut"), Map.entry("DE", "Delaware"), Map.entry("FL", "Florida"),
+            Map.entry("GA", "Georgia"), Map.entry("HI", "Hawaii"), Map.entry("ID", "Idaho"),
+            Map.entry("IL", "Illinois"), Map.entry("IN", "Indiana"), Map.entry("IA", "Iowa"),
+            Map.entry("KS", "Kansas"), Map.entry("KY", "Kentucky"), Map.entry("LA", "Louisiana"),
+            Map.entry("ME", "Maine"), Map.entry("MD", "Maryland"), Map.entry("MA", "Massachusetts"),
+            Map.entry("MI", "Michigan"), Map.entry("MN", "Minnesota"), Map.entry("MS", "Mississippi"),
+            Map.entry("MO", "Missouri"), Map.entry("MT", "Montana"), Map.entry("NE", "Nebraska"),
+            Map.entry("NV", "Nevada"), Map.entry("NH", "New Hampshire"), Map.entry("NJ", "New Jersey"),
+            Map.entry("NM", "New Mexico"), Map.entry("NY", "New York"), Map.entry("NC", "North Carolina"),
+            Map.entry("ND", "North Dakota"), Map.entry("OH", "Ohio"), Map.entry("OK", "Oklahoma"),
+            Map.entry("OR", "Oregon"), Map.entry("PA", "Pennsylvania"), Map.entry("RI", "Rhode Island"),
+            Map.entry("SC", "South Carolina"), Map.entry("SD", "South Dakota"), Map.entry("TN", "Tennessee"),
+            Map.entry("TX", "Texas"), Map.entry("UT", "Utah"), Map.entry("VT", "Vermont"),
+            Map.entry("VA", "Virginia"), Map.entry("WA", "Washington"), Map.entry("WV", "West Virginia"),
+            Map.entry("WI", "Wisconsin"), Map.entry("WY", "Wyoming"), Map.entry("DC", "District of Columbia"));
+
+    public static boolean requiresRegion(String country) {
+        return country != null && US_CA_COUNTRY_TOKENS.contains(country.trim().toUpperCase());
+    }
+
+    private boolean countryMatches(String input, Map location) {
+        String code = (String) location.get("country_code");
+        String name = (String) location.get("country");
+        String c = input.trim();
+        return (code != null && code.equalsIgnoreCase(c)) || (name != null && name.equalsIgnoreCase(c));
+    }
+
+    private boolean regionMatches(String input, Map location) {
+        String admin1 = (String) location.get("admin1");
+        if (admin1 == null) {
+            return false;
+        }
+        String r = input.trim();
+        if (admin1.equalsIgnoreCase(r)) {
+            return true;
+        }
+        String expanded = REGION_ABBREVIATIONS.get(r.toUpperCase());
+        if (expanded != null) {
+            return admin1.equalsIgnoreCase(expanded);
+        }
+        return admin1.toLowerCase().contains(r.toLowerCase());
+    }
+
+    private double[] getCoordinates(String city, String country, String region) {
         try {
             String url = "https://geocoding-api.open-meteo.com/v1/search?name="
-                    + city + "&count=5&language=en&format=json";
+                    + city + "&count=10&language=en&format=json";
 
             Map response = restTemplate.getForObject(url, Map.class);
 
@@ -29,26 +86,23 @@ public class WeatherService {
                 throw new CityNotFoundException(city, country);
             }
 
-            // Try to match the country code if provided
-            if (country != null && !country.isBlank()) {
-                for (Object item : results) {
-                    Map location = (Map) item;
-                    String resultCountry = (String) location.get("country_code");
-                    if (country.equalsIgnoreCase(resultCountry)) {
-                        double lat = ((Number) location.get("latitude")).doubleValue();
-                        double lon = ((Number) location.get("longitude")).doubleValue();
-                        return new double[]{lat, lon};
-                    }
+            boolean hasCountry = country != null && !country.isBlank();
+            boolean hasRegion = region != null && !region.isBlank();
+
+            for (Object item : results) {
+                Map location = (Map) item;
+                if (hasCountry && !countryMatches(country, location)) {
+                    continue;
                 }
-                // No result matched the given country code
-                throw new CityNotFoundException(city, country);
+                if (hasRegion && !regionMatches(region, location)) {
+                    continue;
+                }
+                double lat = ((Number) location.get("latitude")).doubleValue();
+                double lon = ((Number) location.get("longitude")).doubleValue();
+                return new double[]{lat, lon};
             }
 
-            // No country filter — use the top result
-            Map location = (Map) results.get(0);
-            double lat = ((Number) location.get("latitude")).doubleValue();
-            double lon = ((Number) location.get("longitude")).doubleValue();
-            return new double[]{lat, lon};
+            throw new CityNotFoundException(city, country);
 
         } catch (CityNotFoundException e) {
             throw e;
@@ -58,7 +112,11 @@ public class WeatherService {
     }
 
     public double getMinTemperature(String city, String country) {
-        double[] coords = getCoordinates(city, country); // throws CityNotFoundException if invalid
+        return getMinTemperature(city, country, null);
+    }
+
+    public double getMinTemperature(String city, String country, String region) {
+        double[] coords = getCoordinates(city, country, region);
         double lat = coords[0];
         double lon = coords[1];
 
@@ -106,6 +164,51 @@ public class WeatherService {
             System.err.println("WeatherService error for " + city + ": " + e.getMessage());
             return 0;
         }
+    }
+
+    public List<CitySuggestion> searchCities(String city, String country, String region) {
+        if (city == null || city.isBlank()) {
+            return List.of();
+        }
+        try {
+            String url = "https://geocoding-api.open-meteo.com/v1/search?name="
+                    + city + "&count=100&language=en&format=json";
+
+            Map response = restTemplate.getForObject(url, Map.class);
+            if (response == null || !response.containsKey("results")) {
+                return List.of();
+            }
+
+            List results = (List) response.get("results");
+            boolean hasCountry = country != null && !country.isBlank();
+            boolean hasRegion = region != null && !region.isBlank();
+
+            List<CitySuggestion> suggestions = new ArrayList<>();
+            for (Object item : results) {
+                Map location = (Map) item;
+                if (hasCountry && !countryMatches(country, location)) {
+                    continue;
+                }
+                if (hasRegion && !regionMatches(region, location)) {
+                    continue;
+                }
+                suggestions.add(new CitySuggestion(
+                        (String) location.get("name"),
+                        (String) location.get("admin1"),
+                        (String) location.get("country")));
+                if (suggestions.size() >= 10) {
+                    break;
+                }
+            }
+            return suggestions;
+
+        } catch (Exception e) {
+            System.err.println("WeatherService city search error for " + city + ": " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    public record CitySuggestion(String name, String admin1, String country) {
     }
 
     // Custom exception

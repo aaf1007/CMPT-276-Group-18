@@ -11,6 +11,38 @@
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
     <link rel="stylesheet" th:href="@{/css/user.css}" />
+    <style>
+        .xan-ac { position: relative; }
+        .xan-ac-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            margin-top: 2px;
+            padding: 0;
+            list-style: none;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: none;
+        }
+        .xan-ac-list.show { display: block; }
+        .xan-ac-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--xan-navy);
+            font-size: 0.95rem;
+        }
+        .xan-ac-item + .xan-ac-item { border-top: 1px solid #f0f0f0; }
+        .xan-ac-item:hover,
+        .xan-ac-item.active {
+            background-color: var(--xan-light-blue);
+            color: #003366;
+        }
+    </style>
 </head>
 
 <body class="d-flex flex-column min-vh-100">
@@ -43,6 +75,7 @@
                         <div class="d-flex align-items-center gap-2 mb-3">
                             <span class="xan-section-num">1</span>
                             <h5 class="xan-title mb-0">Single Panel Specifications</h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-clear="panel">Clear</button>
                         </div>
 
                         <div class="mb-3">
@@ -66,7 +99,7 @@
                             <label class="form-label">Maximum Power ( P<sub>max</sub> )</label>
                             <div class="input-group">
                                 <input type="number" id="pmax" name="pmax" class="form-control" placeholder="0" min="0.01"
-                                    max="1000" step="0.01" required />
+                                    max="1000" step="0.01" th:value="${pmax}" required />
                                 <span class="input-group-text">W</span>
                             </div>
                             <div class="invalid-feedback">
@@ -78,7 +111,7 @@
                             <label class="form-label">Open Circuit Voltage ( V<sub>oc</sub> )</label>
                             <div class="input-group">
                                 <input type="number" id="voc" name="voc" class="form-control" step="0.01" placeholder="0.00"
-                                    min="0.01" max="150" required />
+                                    min="0.01" max="150" th:value="${voc}" required />
                                 <span class="input-group-text">V</span>
                             </div>
                             <div class="invalid-feedback">
@@ -90,7 +123,7 @@
                             <label class="form-label">Short Circuit Current ( I<sub>sc</sub> )</label>
                             <div class="input-group">
                                 <input type="number" id="isc" name="isc" class="form-control" step="0.01" placeholder="0.00"
-                                    min="0.01" max="50" required />
+                                    min="0.01" max="50" th:value="${isc}" required />
                                 <span class="input-group-text">A</span>
                             </div>
                             <div class="invalid-feedback">
@@ -106,29 +139,30 @@
                         <div class="d-flex align-items-center gap-2 mb-3">
                             <span class="xan-section-num">2</span>
                             <h5 class="xan-title mb-0">Solar Array Configuration</h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-clear="array">Clear</button>
                         </div>
                         <div class="row">
                             <div class="col-6 mb-3">
                                 <label class="form-label">Series Count</label>
                                 <input type="number" min="1" max="6" id="series" name="series" class="form-control"
-                                    value="1" />
+                                    th:value="${series != null ? series : 1}" />
                             </div>
 
                             <div class="col-6 mb-3">
                                 <label class="form-label">Parallel Count</label>
                                 <input type="number" min="1" max="4" id="parallel" name="parallel" class="form-control"
-                                    value="1" />
+                                    th:value="${parallel != null ? parallel : 1}" />
                             </div>
                         </div>
                         <label class="form-label d-block">Battery Bank Voltage</label>
                         <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="battV" id="batt12" value="12" checked />
+                            <input type="radio" class="btn-check" name="battV" id="batt12" value="12" th:checked="${battV == null or battV == 12}" />
                             <label class="btn btn-outline-primary" for="batt12">12V</label>
-                            <input type="radio" class="btn-check" name="battV" id="batt24" value="24" />
+                            <input type="radio" class="btn-check" name="battV" id="batt24" value="24" th:checked="${battV == 24}" />
                             <label class="btn btn-outline-primary" for="batt24">24V</label>
-                            <input type="radio" class="btn-check" name="battV" id="batt36" value="36" />
+                            <input type="radio" class="btn-check" name="battV" id="batt36" value="36" th:checked="${battV == 36}" />
                             <label class="btn btn-outline-primary" for="batt36">36V</label>
-                            <input type="radio" class="btn-check" name="battV" id="batt48" value="48" />
+                            <input type="radio" class="btn-check" name="battV" id="batt48" value="48" th:checked="${battV == 48}" />
                             <label class="btn btn-outline-primary" for="batt48">48V</label>
                         </div>
 
@@ -145,17 +179,32 @@
                         <div class="d-flex align-items-center gap-2 mb-3">
                             <span class="xan-section-num">3</span>
                             <h5 class="xan-title mb-0">Location</h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-clear="location">Clear</button>
                         </div>
                         <input type="hidden" id="manualTempCelsius" name="manualTempCelsius" />
                         <div class="row">
-                            <div class="col-7 mb-3">
-                                <label class="form-label">City</label>
-                                <input type="text" id="city" name="city" class="form-control" placeholder="e.g. Vancouver" />
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Country</label>
+                                <div class="xan-ac">
+                                    <input type="text" id="country" name="country" class="form-control"
+                                        autocomplete="new-password" th:value="${country}" placeholder="e.g. Canada or CA" />
+                                    <ul class="xan-ac-list" id="countryAc"></ul>
+                                </div>
                             </div>
-                            <div class="col-5 mb-3">
-                                <label class="form-label">Country Code</label>
-                                <input type="text" id="country" name="country" class="form-control"
-                                    placeholder="e.g. CA" maxlength="2" />
+                            <div class="col-12 mb-3">
+                                <label class="form-label">State / Province / Region</label>
+                                <div class="xan-ac">
+                                    <input type="text" id="region" name="region" class="form-control"
+                                        autocomplete="new-password" th:value="${region}" placeholder="e.g. BC or British Columbia" />
+                                    <ul class="xan-ac-list" id="regionAc"></ul>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">City</label>
+                                <div class="xan-ac">
+                                    <input type="text" id="city" name="city" class="form-control" autocomplete="new-password" th:value="${city}" placeholder="e.g. Vancouver" />
+                                    <ul class="xan-ac-list" id="cityAc"></ul>
+                                </div>
                             </div>
                         </div>
                         <div id="locationError" class="alert alert-danger d-none mt-2 py-2" role="alert"></div>
@@ -165,11 +214,11 @@
                         <div class="mb-3">
                             <label class="form-label">Lowest Temperature at Your Location</label>
                             <div class="input-group">
-                                <input type="number" id="manualTemp" class="form-control"
-                                    step="1" min="-99" max="150" />
-                                <select id="tempUnit" class="form-select" style="max-width: 90px;">
-                                    <option value="C">°C</option>
-                                    <option value="F">°F</option>
+                                <input type="number" id="manualTemp" name="manualTemp" class="form-control"
+                                    step="1" min="-99" max="150" th:value="${manualTemp}" />
+                                <select id="tempUnit" name="tempUnit" class="form-select" style="max-width: 90px;">
+                                    <option value="C" th:selected="${tempUnit == null or tempUnit == 'C'}">°C</option>
+                                    <option value="F" th:selected="${tempUnit == 'F'}">°F</option>
                                 </select>
                             </div>
                         </div>
@@ -219,6 +268,12 @@
     <!-- Results Section -->
     <div th:if="${result != null}" class="container mb-4">
         <div class="row g-4">
+            <div class="col-12" th:if="${minTemp != null}">
+                <div class="xan-card p-3 text-center">
+                    <small class="xan-metric-label d-block">DESIGN MINIMUM TEMPERATURE</small>
+                    <span class="live-metric" th:text="${#numbers.formatDecimal(minTemp, 1, 1)} + ' °C'"></span>
+                </div>
+            </div>
             <div class="col-12">
                 <div class="xan-card p-4" th:if="${compatibleControllers != null and !#lists.isEmpty(compatibleControllers)}">
                     <div class="d-flex align-items-center gap-2 mb-4">
@@ -262,8 +317,10 @@
                     </div>
                 </div>
 
-                <div class="xan-card p-4" th:if="${compatibleControllers == null or #lists.isEmpty(compatibleControllers)}">
-                    <p class="text-danger fw-bold mb-0">No compatible controller found. Please adjust your specifications.</p>
+                <div class="xan-card p-4 text-center" th:if="${compatibleControllers == null or #lists.isEmpty(compatibleControllers)}">
+                    <h5 class="xan-title mb-2">No Matching Controller Found</h5>
+                    <p class="mb-4">It looks like your selected configuration isn't in our current inventory yet. Our sales team would be happy to help you find the right solution for your setup.</p>
+                    <a href="https://xantrex.com/support/contact-sales/" target="_blank" class="btn btn-xan">Contact Us</a>
                 </div>
             </div>
         </div>

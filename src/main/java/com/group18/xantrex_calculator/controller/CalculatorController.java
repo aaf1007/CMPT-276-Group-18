@@ -47,8 +47,24 @@ public class CalculatorController {
             @RequestParam Integer battV,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String country,
+            @RequestParam(required = false) String region,
             @RequestParam(required = false) Double manualTempCelsius,
+            @RequestParam(required = false) String manualTemp,
+            @RequestParam(required = false) String tempUnit,
             Model model) {
+
+        model.addAttribute("pmax", pmax);
+        model.addAttribute("voc", voc);
+        model.addAttribute("isc", isc);
+        model.addAttribute("series", series);
+        model.addAttribute("parallel", parallel);
+        model.addAttribute("battV", battV);
+        model.addAttribute("city", city);
+        model.addAttribute("country", country);
+        model.addAttribute("region", region);
+        model.addAttribute("manualTempCelsius", manualTempCelsius);
+        model.addAttribute("manualTemp", manualTemp);
+        model.addAttribute("tempUnit", tempUnit);
 
         // Validate required parameters
         if (pmax == null || pmax <= 0 || voc == null || voc <= 0 || isc == null || isc <= 0 ||
@@ -64,7 +80,16 @@ public class CalculatorController {
         if (manualTempCelsius != null) {
             minTemp = manualTempCelsius;
         } else {
-            minTemp = weatherService.getMinTemperature(city, country);
+            if (WeatherService.requiresRegion(country) && (region == null || region.trim().isEmpty())) {
+                Authentication regionAuth = SecurityContextHolder.getContext().getAuthentication();
+                boolean regionLoggedIn = regionAuth != null && regionAuth.isAuthenticated()
+                        && !(regionAuth instanceof AnonymousAuthenticationToken);
+                model.addAttribute("error", "State/Province/Region is required for United States and Canada locations.");
+                model.addAttribute("isLoggedIn", regionLoggedIn);
+                model.addAttribute("panels", solarPanelsService.getAllPanels());
+                return "userdashboard";
+            }
+            minTemp = weatherService.getMinTemperature(city, country, region);
         }
         double tempFactor = calculateTemperatureFactor(minTemp);
 

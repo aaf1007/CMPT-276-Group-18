@@ -1,5 +1,7 @@
 package com.group18.xantrex_calculator.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.group18.xantrex_calculator.service.WeatherService;
 import com.group18.xantrex_calculator.service.WeatherService.CityNotFoundException;
+import com.group18.xantrex_calculator.service.WeatherService.CitySuggestion;
 
 @RestController
 @RequestMapping("/api/weather")
@@ -18,11 +21,19 @@ public class WeatherController {
         this.weatherService = weatherService;
     }
 
+    @GetMapping("/cities")
+    public List<CitySuggestion> searchCities(@RequestParam String city,
+                                             @RequestParam(required = false) String country,
+                                             @RequestParam(required = false) String region) {
+        return weatherService.searchCities(city, country, region);
+    }
+
     @GetMapping("/min-temp")
     public ResponseEntity<?> getMinTemp(@RequestParam String city,
-                                        @RequestParam String country) {
+                                        @RequestParam String country,
+                                        @RequestParam(required = false) String region) {
         try {
-            double temp = weatherService.getMinTemperature(city, country);
+            double temp = weatherService.getMinTemperature(city, country, region);
             return ResponseEntity.ok(temp);
 
         } catch (CityNotFoundException e) {

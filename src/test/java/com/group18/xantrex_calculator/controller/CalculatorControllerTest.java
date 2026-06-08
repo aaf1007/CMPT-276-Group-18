@@ -59,7 +59,7 @@ public class CalculatorControllerTest {
         controller.setMaxCurrent(250.0);
         controller.setMaxIsc(30.0);
 
-        when(weatherService.getMinTemperature("Vancouver", "CA")).thenReturn(5.0);
+        when(weatherService.getMinTemperature("Vancouver", "CA", "British Columbia")).thenReturn(5.0);
 
         when(calculatorService.calculate(
                 260, 23.8, 10.0, 6, 2, 12, 1.2))
@@ -76,7 +76,8 @@ public class CalculatorControllerTest {
                 .param("parallel", "2")
                 .param("battV", "12")
                 .param("city", "Vancouver")
-                .param("country", "CA"))
+                .param("country", "CA")
+                .param("region", "British Columbia"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("userdashboard"))
                 .andExpect(model().attributeExists("result"))
@@ -88,6 +89,29 @@ public class CalculatorControllerTest {
 
         verify(calculatorService, times(1))
                 .findAllCompatibleControllers(result, "12");
+    }
+
+    /* Test POST /calculator rejects missing region for US/Canada */
+    @Test
+    void testCalculate_MissingRegionForUsCanada() throws Exception {
+
+        mockMvc.perform(post("/calculator")
+                .param("pmax", "260")
+                .param("voc", "23.8")
+                .param("isc", "10.0")
+                .param("series", "6")
+                .param("parallel", "2")
+                .param("battV", "12")
+                .param("city", "Seattle")
+                .param("country", "US"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("userdashboard"))
+                .andExpect(model().attributeExists("error"));
+
+        verify(calculatorService, never())
+                .calculate(anyDouble(), anyDouble(), anyDouble(), anyInt(), anyInt(), anyInt(), anyDouble());
+        verify(weatherService, never())
+                .getMinTemperature(anyString(), anyString(), anyString());
     }
 
 
